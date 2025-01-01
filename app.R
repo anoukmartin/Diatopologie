@@ -22,7 +22,7 @@ claviersMG <- read_excel("clavier_notes.xlsx", sheet = "claviersMG")
 # Thème personnalisé
 my_theme <- bs_theme(
   bootswatch = "flatly",   # Style moderne
-  primary = "#007BFF",     # Couleur principale
+  primary = "grey",     # Couleur principale
   secondary = "#6C757D",   # Couleur secondaire
   font_scale = 0.7,        # Taille de la police
   base_font = font_google("Roboto")  # Police moderne et lisible
@@ -38,7 +38,8 @@ ui <- page_sidebar(
     accordion(
       # Panneau: Plan du clavier
       accordion_panel(
-        "Plan du clavier",
+        title = "Plan du clavier",
+        icon = bsicons::bs_icon("sliders"),
         selectizeInput(
           "rangsMD", 
           label = "Clavier main droite",
@@ -67,38 +68,10 @@ ui <- page_sidebar(
       
       # Panneau: Accord
       accordion_panel(
-        "Accord",
-        tags$h4("Sélection des accords", class = "text-primary"),
-        selectizeInput(
-          "root", 
-          label = "Fondamentale", 
-          choices = c(
-            "Do [C]" = "C", "Do# [C#]" = "C#", "Réb [Db]" = "C#",
-            "Ré [D]" = "D", "Ré# [D#]" = "Eb", "Mib [Eb]" = "Eb",
-            "Mi [E]" = "E", "F [F]" = "F", "F# [F#]" = "F#",
-            "Solb [Gb]" = "F#", "Sol [G]" = "G", "Sol# [G#]" = "G#",
-            "Lab [Ab]" = "G#", "La [A]" = "A", "La# [A#]" = "Bb",
-            "Sib [Bb]" = "Bb", "Si [B]" = "B"
-          ), 
-          selected = "C"
-        ),
-        selectizeInput(
-          "chord", 
-          label = "Type d'accord", 
-          choices = c(
-            "Majeur" = "major", "Mineur" = "minor", "7ème" = "7th",
-            "Majeur 7ème" = "major7th", "Mineur 7ème" = "minor7th", "Diminué" = "diminished",
-            "Augmenté" = "augmented", "Diminué 7ème" = "diminished7th", 
-            "Demi-diminué 7ème" = "halfDiminished7th", "Augmenté 7ème" = "7th#5",
-            "Suspendu 2nd" = "sus2", "Suspendu quarte" = "sus4", 
-            "6ème" = "6th", "Mineur 6ème" = "minor6th", "9ème" = "9th", 
-            "Majeur 9ème" = "major9th", "Mineur 9ème" = "minor9th",
-            "7ème 9ème augmentée" = "7th#9", "Etendu 9ème" = "added9th",
-            "Mineur étendu 9ème" = "minorAdd9th", "Quinte (sans tierce)" = "5th",
-            "Flat five" = "flat5th"
-          ),
-          selected = "minor"
-        )
+        title = "Accord",
+        icon = bsicons::bs_icon("music-note"),
+        input_switch("dispAccord", "Visualiser un accord", value = F),
+        uiOutput("choose_chord_ui")
       )
     )
   ),
@@ -107,69 +80,136 @@ ui <- page_sidebar(
   layout_columns(
     # Graphique du clavier
     card(
-      tags$h3("Visualisation du clavier", class = "text-info"),
+      card_header("Visualisation du clavier"),
+      layout_columns(
       plotOutput("clavier_plot"),
-      fixed = TRUE,
-      input_switch(
-        id = "dispNumeros", 
-        label = "Afficher les numéros des touches", 
-        value = TRUE
-      ),
-      input_switch(
-        id = "dispNotes", 
-        label = "Afficher toutes les notes", 
-        value = TRUE
-      )
-    ),
+      card(card_title("Paramètres visuels"),
+                  input_switch(
+                    id = "dispNumeros", 
+                    label = "Afficher les numéros des touches", 
+                    value = TRUE
+                  ),
+                  input_switch(
+                    id = "dispNotes", 
+                    label = "Afficher toutes les notes", 
+                    value = TRUE
+                  ), 
+                  downloadButton("downloadPlot", "Telecharger l'image"))), 
+      col_widths = c(8, 2)),
     
     # Boîte de valeur
     value_box(
       title = "Accord sélectionné",
       value = textOutput("accord"),
       showcase = bs_icon("music-note-beamed"),
-      p(textOutput("accord_description"),),
-    ),
+      p(textOutput("accord_description"))),
     
     col_widths = c(8, 4)
   )
 )
 
-
+ui
 ##############################################
 # Logique Serveur
 ##############################################
 server <- function(input, output) {
   
+  #Paramètres des inputs dépendants d'autes inputs
+  output$choose_chord_ui <- renderUI({ 
+    if (input$dispAccord) { 
+      card(
+      selectizeInput(
+        "root", 
+        label = "Fondamentale", 
+        choices = c(
+          "Do [C]" = "C", "Do# [C#]" = "C#", "Réb [Db]" = "C#",
+          "Ré [D]" = "D", "Ré# [D#]" = "Eb", "Mib [Eb]" = "Eb",
+          "Mi [E]" = "E", "F [F]" = "F", "F# [F#]" = "F#",
+          "Solb [Gb]" = "F#", "Sol [G]" = "G", "Sol# [G#]" = "G#",
+          "Lab [Ab]" = "G#", "La [A]" = "A", "La# [A#]" = "Bb",
+          "Sib [Bb]" = "Bb", "Si [B]" = "B"
+        ), 
+        selected = "C"
+      ),
+      selectizeInput(
+        "chord", 
+        label = "Type d'accord", 
+        choices = c(
+          "Majeur" = "major", "Mineur" = "minor", "7ème" = "7th",
+          "Majeur 7ème" = "major7th", "Mineur 7ème" = "minor7th", "Diminué" = "diminished",
+          "Augmenté" = "augmented", "Diminué 7ème" = "diminished7th", 
+          "Demi-diminué 7ème" = "halfDiminished7th", "Augmenté 7ème" = "7th#5",
+          "Suspendu 2nd" = "sus2", "Suspendu quarte" = "sus4", 
+          "6ème" = "6th", "Mineur 6ème" = "minor6th", "9ème" = "9th", 
+          "Majeur 9ème" = "major9th", "Mineur 9ème" = "minor9th",
+          "7ème 9ème augmentée" = "7th#9", "Etendu 9ème" = "added9th",
+          "Mineur étendu 9ème" = "minorAdd9th", "Quinte (sans tierce)" = "5th",
+          "Flat five" = "flat5th"
+        ),
+        selected = "minor"
+      )
+      )
+    } 
+  })
   
- 
   # Rendu du graphique du clavier
   output$clavier_plot <- renderPlot({
-    validate(
-      need(input$rangsMD, "Veuillez sélectionner un type de clavier main droite."),
-      need(input$basses, "Veuillez sélectionner un type de clavier main gauche."),
-      need(input$planMD, "Veuillez sélectionner un plan main droite."),
-      need(input$planMG, "Veuillez sélectionner un plan main gauche."),
-      need(input$root, "Veuillez sélectionner une note fondamentale pour l'accord"),
-      need(input$chord, "Veuillez sélectionner un type d'accord.")
-    )
+    
     
     # Traitement des données pour le clavier
     clavier <- typeClavier(rangsMD = input$rangsMD, basses = input$basses)
     plan <- planClavier(MD = input$planMD, MG = input$planMG)
     
     clav <- calc_coord(clavier, plan)
+    clav$halfcircles$main_droite <- build_halfcircles(clav$plan$main_droite)
+    clav$halfcircles$main_gauche <- build_halfcircles(clav$plan$main_gauche)
+    
+    if(input$dispAccord){
     accord <- find_chord(input$root, input$chord, clav) 
-    accord <- write_about_chord(accord)
+    accord <- write_about_chord(accord)} else {
+      accord <- find_chord("C", "minor", clav) 
+      accord <- write_about_chord(accord)} 
    
-    create_clavier_plot(clav, accord, dispNotes = input$dispNotes, dispNumeros = input$dispNumeros)
+    create_clavier_plot(clav, accord, 
+                        dispNotes = input$dispNotes, 
+                        dispNumeros = input$dispNumeros, 
+                        dispAccord = input$dispAccord)
   })
+  
   
   # Génération du texte sélectionné
   output$accord <- renderText({
-    paste(accord$name)
+    # Traitement des données pour le clavier
+    clavier <- typeClavier(rangsMD = input$rangsMD, basses = input$basses)
+    plan <- planClavier(MD = input$planMD, MG = input$planMG)
+    
+    clav <- calc_coord(clavier, plan)
+    clav$halfcircles$main_droite <- build_halfcircles(clav$plan$main_droite)
+    clav$halfcircles$main_gauche <- build_halfcircles(clav$plan$main_gauche)
+    
+    if(input$dispAccord){
+      accord <- find_chord(input$root, input$chord, clav) 
+      accord <- write_about_chord(accord)} else {
+        accord <- find_chord("C", "minor", clav) 
+        accord <- write_about_chord(accord)} 
+    if(input$dispAccord){paste(accord$name)} else paste("Aucun accord séléctioné")
   })
   output$accord_description <- renderText({
-    paste(accord$description, "\n", accord$dispo)
+    # Traitement des données pour le clavier
+    clavier <- typeClavier(rangsMD = input$rangsMD, basses = input$basses)
+    plan <- planClavier(MD = input$planMD, MG = input$planMG)
+    
+    clav <- calc_coord(clavier, plan)
+    clav$halfcircles$main_droite <- build_halfcircles(clav$plan$main_droite)
+    clav$halfcircles$main_gauche <- build_halfcircles(clav$plan$main_gauche)
+    
+    if(input$dispAccord){
+      accord <- find_chord(input$root, input$chord, clav) 
+      accord <- write_about_chord(accord)} else {
+        accord <- find_chord("C", "minor", clav) 
+        accord <- write_about_chord(accord)} 
+    if(input$dispAccord){paste(accord$description, "\\n", accord$dispo)} else paste("")
+    
   })
 }
 

@@ -11,6 +11,8 @@ chord = "major"
 # 
 find_chord <- function(root, chord, clav){
   accord <- NULL
+  accord$root <- root
+  accord$chord <- chord
   accord$notes <- buildChord(root, chord) %>%
     str_remove_all("[:digit:]") %>%
     format_notes()
@@ -30,7 +32,7 @@ find_chord <- function(root, chord, clav){
 accord <- find_chord(root, chord, clav)
 
 write_about_chord <- function(accord){
-  accord$name <- paste0(convert_to_french_notes(root), " ", str_to_lower(convert_to_french_chords(chord)))
+  accord$name <- paste0(convert_to_french_notes(accord$root), " ", str_to_lower(convert_to_french_chords(accord$chord)))
   accord$description <- paste0("Cet accord est composé des notes ", combine_wordsFr(convert_to_french_notes(accord$notes)), ".")
   if(accord$tire$oui & accord$pousse$oui){accord$dispo <- "Il est disponible en poussé et en tiré."}
   if(accord$tire$oui & !accord$pousse$oui){accord$dispo <- "Il est disponible seulement en tiré."}

@@ -2,7 +2,7 @@ library(ggplot2)
 library(dplyr)
 
 # Définition de la fonction
-create_clavier_plot <- function(clav, accord, dispNotes = TRUE, dispNumeros = TRUE) {
+create_clavier_plot <- function(clav, accord, dispNotes = TRUE, dispNumeros = TRUE, dispAccord = TRUE) {
   # Configuration initiale du graphique
   pclavier <- ggplot() +
     theme_void() +
@@ -34,6 +34,7 @@ create_clavier_plot <- function(clav, accord, dispNotes = TRUE, dispNumeros = TR
   size_notes <- 2.5
   
   # Gestion des notes en tiré
+  if(dispAccord){
   if (accord$tire$oui) {
     pclavier <- pclavier +
       geom_polygon(
@@ -102,7 +103,7 @@ create_clavier_plot <- function(clav, accord, dispNotes = TRUE, dispNumeros = TR
         )
     }
   }
-  
+  }
   # Ajout de la légende explicite
   pclavier <- pclavier +
     scale_fill_manual(
