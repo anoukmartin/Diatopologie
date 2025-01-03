@@ -100,6 +100,10 @@ planClavier <- function(MD = c("Sol/Do", "Sol/Do/Heim", "Sol/Do/JPL"),
 
 # Exemple d'utilisation
 plan <- planClavier(MD = "Sol/Do/JPL", MG = "Classique")
+# plan$main_gauche <- plan$main_gauche %>%
+#   mutate(accords_avectierces = case_when(
+#     type == "a" ~ paste0(buildChord(note, tierce), collapse = ";")
+#   ))
 
 # === Section 4 : Calcul des coordonnées des boutons ===
 

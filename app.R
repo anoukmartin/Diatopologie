@@ -35,6 +35,7 @@ ui <- page_sidebar(
   
   # Barre latérale
   sidebar = sidebar(
+    open = "always",
     accordion(
       # Panneau: Plan du clavier
       accordion_panel(
@@ -63,7 +64,10 @@ ui <- page_sidebar(
           label = NULL, 
           choices = c("Classique", "chelou"), 
           selected = "Classique"
-        )
+        ),
+        input_switch("tierces", 
+                     label = "tierces occultées", 
+                     value = T)
       ),
       
       # Panneau: Accord
@@ -72,6 +76,13 @@ ui <- page_sidebar(
         icon = bsicons::bs_icon("music-note"),
         input_switch("dispAccord", "Visualiser un accord", value = F),
         uiOutput("choose_chord_ui")
+      ), 
+      # Panneau: Gamme
+      accordion_panel(
+        title = "Gamme",
+        icon = bsicons::bs_icon("music-note"),
+        input_switch("dispGamme", "Visualiser une gamme", value = F),
+        uiOutput("choose_scale_ui")
       )
     )
   ),
@@ -81,28 +92,37 @@ ui <- page_sidebar(
     # Graphique du clavier
     card(
       card_header("Visualisation du clavier"),
-      layout_columns(
-      plotOutput("clavier_plot"),
-      card(card_title("Paramètres visuels"),
-                  input_switch(
-                    id = "dispNumeros", 
-                    label = "Afficher les numéros des touches", 
-                    value = TRUE
-                  ),
-                  input_switch(
-                    id = "dispNotes", 
-                    label = "Afficher toutes les notes", 
-                    value = TRUE
-                  ), 
-                  downloadButton("downloadPlot", "Telecharger l'image"))), 
-      col_widths = c(8, 2)),
+      layout_sidebar(
+        plotOutput("clavier_plot"),
+        sidebar = sidebar(
+          icon = bsicons::bs_icon("music-note"),
+         # width = 250, 
+          position = "right", 
+          open = "closed", id = NULL, title = "Paramètres visuels", 
+              input_switch(
+                id = "dispNumeros", 
+                label = "Afficher les numéros des touches", 
+                value = TRUE
+              ),
+              input_switch(
+                id = "dispNotes", 
+                label = "Afficher toutes les notes", 
+                value = TRUE
+              ), 
+              downloadButton("downloadPlot", "Télécharger l'image")))),
     
     # Boîte de valeur
+    card(
     value_box(
       title = "Accord sélectionné",
       value = textOutput("accord"),
       showcase = bs_icon("music-note-beamed"),
       p(textOutput("accord_description"))),
+    value_box(
+      title = "Gamme sélectionnée",
+      value = " A venir",
+      showcase = bs_icon("music-note-beamed"),
+      p("A venir"))),
     
     col_widths = c(8, 4)
   )
@@ -151,6 +171,54 @@ server <- function(input, output) {
       )
     } 
   })
+ buildScale()
+  #Paramètres des inputs dépendants d'autes inputs
+  output$choose_scale_ui <- renderUI({ 
+    if (input$dispGamme) { 
+      card(
+        selectizeInput(
+          "tonique", 
+          label = "Tonique", 
+          choices = c(
+            "Do [C]" = "C", "Do# [C#]" = "C#", "Réb [Db]" = "C#",
+            "Ré [D]" = "D", "Ré# [D#]" = "Eb", "Mib [Eb]" = "Eb",
+            "Mi [E]" = "E", "F [F]" = "F", "F# [F#]" = "F#",
+            "Solb [Gb]" = "F#", "Sol [G]" = "G", "Sol# [G#]" = "G#",
+            "Lab [Ab]" = "G#", "La [A]" = "A", "La# [A#]" = "Bb",
+            "Sib [Bb]" = "Bb", "Si [B]" = "B"
+          ), 
+          selected = "C"),
+        selectizeInput(
+          "scale", 
+          label = "Mode", 
+          choices = c(
+            "Majeur" = "major", 
+            "Mineur" = "minor", 
+            "Dorien" = "dorian", 
+            "Phrygien" = "phrygian", 
+            "Lydien" = "lydian", 
+            "Lydien augmenté" = "lydianAugmented", 
+            "Acoustique" = "acoustic", 
+            "Mixolydien" = "mixolydian", 
+            "Locrien" = "locrian", 
+            "Locrien majeur" = "majorLocrian", 
+            "Majeur harmonique" = "harmonicMajor", 
+            "Mineur harmonique" = "harmonicMinor", 
+            "Demi-diminué" = "halfDiminished", 
+            "Pentatonique mineur" = "minorPentatonic", 
+            "Pentatonique majeur" = "majorPentatonic", 
+            "Blues" = "blues", 
+            "Altéré" = "altered", 
+            "Hirajoshi" = "hirajoshi", 
+            "Insen" = "insen", 
+            "Algérien" = "algerian", 
+            "Hongrois" = "hungarian", 
+            "In" = "in"
+          ),
+          selected = "major"
+      ))
+    } 
+  })
   
   # Rendu du graphique du clavier
   output$clavier_plot <- renderPlot({
@@ -169,11 +237,16 @@ server <- function(input, output) {
     accord <- write_about_chord(accord)} else {
       accord <- find_chord("C", "minor", clav) 
       accord <- write_about_chord(accord)} 
+    if(input$dispGamme){
+      gamme <- find_scale(input$tonique, input$scale, clav) 
+      } else {
+        gamme <- find_scale("C", "minor", clav)} 
    
-    create_clavier_plot(clav, accord, 
+    create_clavier_plot(clav, accord, scale, 
                         dispNotes = input$dispNotes, 
                         dispNumeros = input$dispNumeros, 
-                        dispAccord = input$dispAccord)
+                        dispAccord = input$dispAccord, 
+                        dispGamme = input$dispGamme)
   })
   
   
