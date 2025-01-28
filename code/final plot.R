@@ -1,6 +1,7 @@
 # Final plot 
+library(ggplot2)
 
-# PLOT #########################################################################
+# PLOT #ggplot2# PLOT #########################################################################
 
 # Création du graphique du clavier
 pclavier <- ggplot() +

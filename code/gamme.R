@@ -37,7 +37,7 @@ write_about_scale <- function(scale){
   
 }
 scale$notes
-scale <- write_about_scale(scale)
+#scale <- write_about_scale(scale)
 
 
 

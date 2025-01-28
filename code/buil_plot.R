@@ -1,11 +1,7 @@
 library(ggplot2)
 library(dplyr)
 
-
-
-
   
-
 # Définition de la fonction
 create_clavier_plot <- function(clav, accord = NULL, scale = NULL, dispNotes = TRUE, dispNumeros = TRUE, dispAccord = TRUE, dispGamme = TRUE) {
   # Configuration initiale du graphique
@@ -171,15 +167,51 @@ create_clavier_plot <- function(clav, accord = NULL, scale = NULL, dispNotes = T
                                                 min(clav$clavier$main_gauche$coordy) -3, 0.5, "top"), 
                            generate_half_circle(min(clav$clavier$main_gauche$coordx), 
                                                 min(clav$clavier$main_gauche$coordy) - 3, 0.5, "bottom"))
-  legendedata$i <- c(rep(1, 100), rep(2, 100))
+  legendedata <- bind_rows(
+    legendedata, 
+    legendedata %>%
+      mutate(x = x + 2.5)
+  )
+  legendedata$i <- c(rep(1, 100), 
+                     rep(2, 100), 
+                     rep(3, 100),
+                     rep(4, 100))
+  legendedata <- legendedata %>%
+    mutate(soufflet = case_when(
+      i == 1 ~ "G",
+      i == 2 ~ "HG",
+      i == 3 ~ "P",
+      i == 4 ~ "T"
+    )) %>%
+    mutate(alpha = case_when(
+      i == 1 ~ 0,
+      i == 2 ~ 1,
+      i == 3 ~ 0.6,
+      i == 4 ~ 0.6)) %>%
+    mutate(label = case_when(
+      i == 1 ~ NA,
+      i == 2 ~ "Hors gamme",
+      i == 3 ~ "Accord en poussé",
+      i == 4 ~ "Accord en tiré"))
+  
+  if(!dispAccord){
+    legendedata <- legendedata %>%
+      filter(i %in% c("1", "2"))
+  }
+  if(!dispGamme){
+    legendedata <- legendedata %>%
+      mutate(soufflet = if_else(
+        soufflet == "HG", "G", soufflet),
+        label = if_else(
+          label == "Hors gamme", NA, label))
+  }
   
   # Ajout de la légende explicite
   pclavier <- pclavier +
     scale_fill_manual(
-      values = c("T" = "#99d594", "P" = "#fc8d59"),
-      labels = c("T" = "Tiré", "P" = "Poussé")
+      values = c("T" = "#99d594", "P" = "#fc8d59", 
+                 "G" = "grey20", "HG" = "grey90")
     ) + 
-   
     #Légende custom 
     geom_polygon(
       data = legendedata,
@@ -189,38 +221,40 @@ create_clavier_plot <- function(clav, accord = NULL, scale = NULL, dispNotes = T
     ) +
     geom_polygon(
       data = legendedata,
-      aes(x = x + 2.5, y = y , group = i),
-      fill = "grey20",
-      color = "white",
+      aes(x = x, y = y, group = i, 
+          fill = soufflet, alpha = alpha), 
+      color = "white"
     ) +
-    geom_polygon(
-      data = legendedata[legendedata$i == "2", ],
-      aes(x = x, y = y, group = i),
-      fill = "grey90",
-      color = "white",
-    ) +
-    geom_polygon(
-      data = legendedata[legendedata$i == "1", ],
-      aes(x = x + 2.5, y = y, group = i),
-      fill = "#99d594",
-      color = "white",
-      alpha = 0.6
-    ) +
-    geom_polygon(
-      data = legendedata[legendedata$i == "2", ],
-      aes(x = x + 2.5, y = y, group = i),
-      fill = "#fc8d59",
-      color = "white",
-      alpha = 0.6
-    ) + 
-    geom_segment(aes(x = min(clav$clavier$main_gauche$coordx) - 1, xend = 10, 
-                     y =  min(clav$clavier$main_gauche$coordy) - 3, 
-                     yend = min(clav$clavier$main_gauche$coordy) - 3), 
-                 size = 1) +
-    annotate(geom = "text", y = 1.2, x = 2, 
-             label = "Poussé") + 
-    annotate(geom = "text", y = 0.8, x = 2, 
-             label = "Tiré")
+    geom_text_repel(data = legendedata %>%
+                       group_by(i) %>%
+                       summarise(x = mean(x), 
+                                 y = mean(y), 
+                                 label = unique(label)), 
+                     aes(x = x, y = y, 
+                         label = label), 
+                    hjust = 0,
+                    size = 2.5, 
+                    nudge_x = c(-2, -2, 2, 2),
+                    nudge_y = c(1, -1, 1, -1), 
+                    color = "grey20") +
+      geom_segment(aes(x = min(clav$clavier$main_gauche$coordx) - 1,
+                       xend = 10,
+                       y =  min(clav$clavier$main_gauche$coordy) - 3,
+                       yend = min(clav$clavier$main_gauche$coordy) - 3),
+                   size = 0.5, color = "grey20") +
+    annotate(geom = "text",
+             x = min(clav$clavier$main_gauche$coordx) + 1.2,
+             y = min(clav$clavier$main_gauche$coordy) - 2.7,
+             size = 2.5,
+             label = "Poussé", 
+             color = "grey20") +
+    annotate(geom = "text",
+             x = min(clav$clavier$main_gauche$coordx) + 1.2,
+             y = min(clav$clavier$main_gauche$coordy) - 3.3,
+             size = 2.5,
+             label = "Tiré", 
+             color = "grey20") 
+  
   
   # Ajout des étiquettes des notes et des numéros
   if (dispNotes) {
@@ -274,4 +308,5 @@ create_clavier_plot <- function(clav, accord = NULL, scale = NULL, dispNotes = T
 }
 
 accord <- find_chord("F", "major", clav)
-create_clavier_plot(clav, accord, scale, dispNotes = T)
+create_clavier_plot(clav, accord, scale, dispNotes = T, dispAccord = F)
+

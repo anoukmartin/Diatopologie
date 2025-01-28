@@ -97,3 +97,9 @@ format_notes <- function(list){
   str_replace_all("Ab", "G#") %>%
   str_replace_all("A#", "Bb")
 }
+
+
+combine_wordsFr <- function(words) {
+  words <- combine_words(words, and = " et ", oxford_comma = F)
+  return(words)
+}

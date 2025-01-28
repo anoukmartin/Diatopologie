@@ -163,6 +163,7 @@ clav <- calc_coord(clavier, plan)
 
 
 ### Fonction outil ####
+N <- 100
 generate_half_circle <- function(x, y, r, direction = "top", n_points = N) {
   theta <- seq(0, pi, length.out = n_points) # Demi-cercle supérieur (par défaut)
   if (direction == "bottom") {
