@@ -85,7 +85,7 @@ convert_to_french_chords <- function(english_chords) {
 }
 
 # Exemple d'utilisation
-english_chords <- c("major", "minor", "7th", "augmented", "unknown")
+english_chords <- c("major", "minor", "7th", "augmented", "diminued", "unknown")
 convert_to_french_chords(english_chords)
 
 

@@ -67,8 +67,8 @@ typeClavier <- function(rangsMD = c("2 rangs", "2 rangs +2", "2 rangs et demi", 
 clavier <- typeClavier(rangsMD = "3 rangs", basses = "18 basses")
 
 # === Section 2 : Chargement des données des claviers ===
-claviersMD <- read_excel("clavier_notes.xlsx", sheet = "claviersMD")
-claviersMG <- read_excel("clavier_notes.xlsx", sheet = "claviersMG")
+claviersMD <- read_excel(here("clavier_notes.xlsx"), sheet = "claviersMD")
+claviersMG <- read_excel(here("clavier_notes.xlsx"), sheet = "claviersMG")
 
 # === Section 3 : Définition du plan des notes ===
 
@@ -204,3 +204,36 @@ build_halfcircles <- function(dataTemp = clav$plan$main_droite){
 
 clav$halfcircles$main_droite <- build_halfcircles(clav$plan$main_droite)
 clav$halfcircles$main_gauche <- build_halfcircles(clav$plan$main_gauche)
+
+build_fullcircles <- function(dataTemp = clav$plan$main_droite){
+  
+  # Nombre de points pour dessiner les cercles
+  N <- 100
+  
+  # Index des lignes
+  dataTemp$i <- 1:nrow(dataTemp)
+  
+  # Génération des cercles
+  temp <- lapply(1:nrow(dataTemp), function(i) {
+    
+    theta <- seq(0, 2*pi, length.out = N)
+    
+    cercle <- data.frame(
+      x = dataTemp$coordx[i] + 0.5 * cos(theta),
+      y = dataTemp$coordy[i] + 0.5 * sin(theta)
+    )
+    
+    cercle$i <- i
+    cercle
+  })
+  
+  temp <- bind_rows(temp)
+  
+  # Jointure avec les données initiales
+  temp <- left_join(temp, dataTemp, by = "i")
+  
+  return(temp)
+}
+
+clav$fullcircles$main_droite <- build_fullcircles(clav$plan$main_droite)
+clav$fullcircles$main_gauche <- build_fullcircles(clav$plan$main_gauche)

@@ -25,7 +25,7 @@ find_chord <- function(root, chord, clav){
   accord$tire$main_gauche$oui <- accord$root %in% clav$plan$main_gauche$note[clav$plan$main_gauche$soufflet == "T"]
   accord$pousse$oui <- accord$pousse$main_droite$oui & accord$pousse$main_gauche$oui
   accord$tire$oui <- accord$tire$main_droite$oui & accord$tire$main_gauche$oui
-  print(accord)
+  #print(accord)
   return(accord)
 }
 
@@ -43,7 +43,51 @@ write_about_chord <- function(accord){
 }
 
 accord <- write_about_chord(accord)
+notes <- accord$notes
 
+generer_renversements <- function(notes) {
+  
+  n <- length(notes)
+  
+  l <- lapply(seq_len(n), function(i) {
+    c(
+      notes[i:n],
+      head(notes, i - 1)
+    )
+  })
+  l <- as.data.frame(l)
+  names(l) <- c("Fond.", paste0(c("1er", "2ème", "3ème", "4ème")[1:(n-1)], " renv."))
+  return(l)
+}
+renversements <- generer_renversements(accord$notes)
 
-
-
+ordre_notes <- accord$notes
+trouver_positions <- function(acc_pos, ordre_notes) {
+  
+  positions <- list()
+  
+  premiere <- acc_pos %>%
+    filter(note == ordre_notes[1]) %>%
+    slice_min(numero, n = 1)
+  
+  positions[[1]] <- premiere
+  
+  for(k in 2:length(ordre_notes)) {
+    
+    derniere_pos <- positions[[k - 1]]
+    
+    candidate <- acc_pos %>%
+      filter(note == ordre_notes[k]) %>%
+      mutate(
+        coord_dist =
+          abs(coordx - unique(derniere_pos$coordx)) +
+          abs(coordy - unique(derniere_pos$coordy))
+      ) %>%
+      slice_min(coord_dist, n = 1) %>%
+      select(-coord_dist)
+    
+    positions[[k]] <- candidate
+  }
+  
+  bind_rows(positions)
+}
